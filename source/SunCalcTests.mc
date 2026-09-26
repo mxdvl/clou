@@ -32,6 +32,35 @@ module SunCalcTests {
     }
 
     (:test)
+    function followingDaySunriseAcrossSpringChange(logger as Test.Logger) as Boolean {
+        // 28 March 2026, 23:30 UTC: adding 24 hours skips to 30 March
+        // in Europe/London. The next event must be 29 March's sunrise.
+        return followingDaySunrise(1774740600, 1774785600, logger);
+    }
+
+    (:test)
+    function followingDaySunriseAfterWinterSunset(logger as Test.Logger) as Boolean {
+        // 21 December 2026, 20:00 UTC: today's events have both passed.
+        // This also requires tomorrow's candidates in a fixed UTC timezone.
+        return followingDaySunrise(1797883200, 1797940800, logger);
+    }
+
+    function followingDaySunrise(
+        evening as Number, nextNoon as Number, logger as Test.Logger
+    ) as Boolean {
+        var position = new Position.Location({
+            :latitude => 51.5074d, :longitude => -0.1278d, :format => :degrees
+        });
+        // Query an explicit date independently of nextEvent's date selection.
+        var sunrise = Weather.getSunrise(position, new Time.Moment(nextNoon));
+        if (sunrise == null || sunrise.value() <= evening) { return false; }
+        var expected = localMinute(sunrise);
+        var actual = SunCalc.nextEvent(new Time.Moment(evening), position);
+        logger.debug("Following day's sunrise: expected=" + expected + ", actual=" + actual);
+        return actual == expected;
+    }
+
+    (:test)
     function sunriseUsesWatchTimezone(logger as Test.Logger) as Boolean {
         // At UTC midnight, sunrise is next at both locations. The result
         // must use the watch's timezone, regardless of the GPS longitude.
