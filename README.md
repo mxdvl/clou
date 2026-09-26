@@ -73,7 +73,8 @@ connectiq
 monkeydo bin/tests/boussole.prg venu445mm -t
 ```
 
-These tests cover advancing past sunset, polar day/night, and displaying
+These tests cover advancing past sunset, selecting the following day's
+sunrise across the spring clock change, polar day/night, and displaying
 sun events in the watch's timezone across spring and autumn clock changes.
 Garmin's `Time.Gregorian.info` converts the selected event to local time
 using the watch's timezone rules for that date, independently of the GPS
@@ -90,6 +91,12 @@ open -a "$(dirname "$(command -v connectiq)")/ConnectIQ.app" --env TZ=UTC
 ```
 
 Run the tests, then repeat with `TZ=Europe/London`.
+
+The next-day query aims near local noon to avoid skipping a date across
+ordinary DST changes. Weather's use of the configured local date has been
+verified in SDK 9.2.0's simulator; its date interpretation on physical
+watch firmware remains unverified. This is not intended to handle
+whole-day date-line changes.
 
 ## Install on the watch
 
