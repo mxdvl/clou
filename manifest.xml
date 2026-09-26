@@ -9,7 +9,7 @@
         entry="BoussoleApp"
         id="e8aac3b4c4274f359419053fa3194caf"
         launcherIcon="@Drawables.LauncherIcon"
-        minApiLevel="3.1.0"
+        minApiLevel="3.3.0"
         name="@Strings.AppName"
         type="watchface">
 

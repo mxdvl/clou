@@ -45,19 +45,19 @@ class BoussoleView extends WatchUi.WatchFace {
         var layout = new Layout(dc.getWidth(), dc.getHeight());
         var scene = lowPower
             ? TimeRing.aodScene(layout, minuteOfDay)
-            : fullScene(layout, minuteOfDay, clock.timeZoneOffset);
+            : fullScene(layout, minuteOfDay);
 
         Render.draw(dc, scene);
     }
 
     //! The normal scene: steps, the next sun event, and the current time.
     private function fullScene(
-        layout as Layout, minuteOfDay as Number, utcOffset as Number
+        layout as Layout, minuteOfDay as Number
     ) as Array<Shapes.Shape> {
         var activity = ActivityMonitor.getInfo();
         var location = Position.getInfo().position;
         var scene = StepsRing.scene(layout, orZero(activity.steps), stepGoal(activity.stepGoal));
-        scene.addAll(SunRing.scene(layout, nextSunEvent(location, utcOffset)));
+        scene.addAll(SunRing.scene(layout, nextSunEvent(location)));
         scene.addAll(TimeRing.scene(layout, minuteOfDay));
         return scene;
     }
@@ -96,11 +96,10 @@ class BoussoleView extends WatchUi.WatchFace {
 
     //! Local minute of the next sunrise or sunset, or null without a known
     //! location.
-    private function nextSunEvent(location as Position.Location?, utcOffset as Number) as Number? {
+    private function nextSunEvent(location as Position.Location?) as Number? {
         if (location == null) {
             return null;
         }
-        var degrees = location.toDegrees();
-        return SunCalc.nextEvent(Time.now().value().toDouble(), degrees[0], degrees[1], utcOffset);
+        return SunCalc.nextEvent(Time.now(), location);
     }
 }
