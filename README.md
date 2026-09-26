@@ -120,10 +120,12 @@ files across.
 
 To update, rebuild and repeat steps 2–5: the new file replaces the old one.
 
-## Releasing
+## Releasing from CI
 
 [`.github/workflows/build.yml`](.github/workflows/build.yml) builds the store
-package (`.iq`, one build per device in `manifest.xml`).
+package (`.iq`, one build per device in `manifest.xml`) on GitHub, so a
+release's package always comes from its tag rather than from a local
+checkout.
 
 To release, tag the commit and push the tag:
 

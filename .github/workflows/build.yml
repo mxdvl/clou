@@ -11,7 +11,7 @@ name: Build
 #   every merge still compiles and keeps the SDK/device cache warm: caches made
 #   on main are the only ones a tag run can reuse.
 #
-# Needs these repository secrets (see README → Releasing):
+# Needs these repository secrets (see README → Releasing from CI):
 #   GARMIN_USERNAME, GARMIN_PASSWORD  Garmin account for the SDK manager
 #   CIQ_DEVELOPER_KEY                 developer_key.der, base64-encoded
 # and optionally the repository variable CIQ_AGREEMENT_HASH, to fail rather
@@ -99,7 +99,8 @@ jobs:
           key="$RUNNER_TEMP/developer_key.der"
           printf '%s' "$CIQ_DEVELOPER_KEY" | base64 -d > "$key"
           mkdir -p bin
-          monkeyc -e -r -w \
+          # Same flags as release.sh: release build, strict type checking.
+          monkeyc -e -r -w -l 3 \
             -f monkey.jungle \
             -y "$key" \
             -o "bin/boussole-${{ steps.name.outputs.version }}.iq"
