@@ -4,7 +4,7 @@
     height="200"
     viewBox="0 0 200 200"
 >
-  <!-- Boussole mark, depicting 13:55 - hour hand pinned at I, minute hand
+  <!-- Clou mark, depicting 13:55 - hour hand pinned at I, minute hand
        at XI, emptying lap (per ClockArc.span) - as a 60 degree craie arc
        from XI to I, across the top. Two brume accent arcs echo the other
        rings: top-right for StepsRing, bottom-left for SunRing.
