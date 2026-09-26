@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <!--
-    Connect IQ manifest for the "Boussole" watch face.
+    Connect IQ manifest for the "Clou" watch face.
     The application id below is a one-time generated UUID that uniquely
     identifies this app. Do not change it once the app is published.
 -->
 <iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
     <iq:application
-        entry="BoussoleApp"
+        entry="ClouApp"
         id="e8aac3b4c4274f359419053fa3194caf"
         launcherIcon="@Drawables.LauncherIcon"
         minApiLevel="3.3.0"

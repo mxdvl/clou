@@ -16,7 +16,7 @@ set -eu
 cd "$(dirname "$0")"
 
 DEVICE="${1:-venu445mm}"
-OUT="bin/boussole.prg"
+OUT="bin/clou.prg"
 mkdir -p bin
 
 if grep -q "id=\"$DEVICE\"" manifest.xml; then
