@@ -17,7 +17,11 @@ module SunCalc {
     //! Null when Weather has neither event for either day (polar day/night)
     //! or can't compute one for this location.
     function nextEvent(now as Time.Moment, location as Position.Location) as Number? {
-        var tomorrow = now.add(new Time.Duration(86400));
+        // Aim near local noon tomorrow so ordinary DST changes cannot push
+        // the query onto the preceding or following date. Weather uses the
+        // configured local date in the simulator; firmware is unverified.
+        var localNow = Gregorian.info(now, Time.FORMAT_SHORT);
+        var tomorrow = now.add(Gregorian.duration({:hours => 24 + 12 - localNow.hour}));
         var candidates = [
             Weather.getSunrise(location, now),
             Weather.getSunset(location, now),

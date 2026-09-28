@@ -1,4 +1,4 @@
-# Boussole
+# Clou
 
 A custom Garmin Connect IQ **watch face**, built with the Monkey C SDK.
 
@@ -8,8 +8,8 @@ between the (pinned) hour hand and the minute hand, which fills on one
 stroke-drawn XII/III/VI/IX on its track. Inside it, the next sunrise or
 sunset in the same style, then steps in the same
 style, anchored at XII.
-Named _boussole_ ("compass" in French) —
-the design will grow toward a compass theme.
+Named _clou_ ("nail" in French) — the hour hand is pinned in place, like a
+nail through the dial. Formerly _boussole_ ("compass").
 
 ## Target devices
 
@@ -49,13 +49,13 @@ Or manually:
 
 ```sh
 mkdir -p bin
-monkeyc -o bin/boussole.prg -f monkey.jungle -y developer_key.der -d venu445mm -w -l 2
+monkeyc -o bin/clou.prg -f monkey.jungle -y developer_key.der -d venu445mm -w -l 2
 connectiq                       # launch the simulator (once)
-monkeydo bin/boussole.prg venu445mm
+monkeydo bin/clou.prg venu445mm
 ```
 
 For the Forerunner 970, replace `venu445mm` with `fr970` in both commands.
-Each build replaces `bin/boussole.prg` with the version for the selected device.
+Each build replaces `bin/clou.prg` with the version for the selected device.
 
 In the simulator, pick a watch face via **Settings** if it doesn't show
 automatically. Use **File → Time** to fast-forward the clock and watch the
@@ -68,12 +68,13 @@ the same SDK and signing-key prerequisites as a normal build:
 
 ```sh
 mkdir -p bin/tests
-monkeyc -o bin/tests/boussole.prg -f monkey.jungle -y developer_key.der -d venu445mm -w -l 3 -t
+monkeyc -o bin/tests/clou.prg -f monkey.jungle -y developer_key.der -d venu445mm -w -l 3 -t
 connectiq
-monkeydo bin/tests/boussole.prg venu445mm -t
+monkeydo bin/tests/clou.prg venu445mm -t
 ```
 
-These tests cover advancing past sunset, polar day/night, and displaying
+These tests cover advancing past sunset, selecting the following day's
+sunrise across the spring clock change, polar day/night, and displaying
 sun events in the watch's timezone across spring and autumn clock changes.
 Garmin's `Time.Gregorian.info` converts the selected event to local time
 using the watch's timezone rules for that date, independently of the GPS
@@ -91,6 +92,31 @@ open -a "$(dirname "$(command -v connectiq)")/ConnectIQ.app" --env TZ=UTC
 
 Run the tests, then repeat with `TZ=Europe/London`.
 
+The next-day query aims near local noon to avoid skipping a date across
+ordinary DST changes. Weather's use of the configured local date has been
+verified in SDK 9.2.0's simulator; its date interpretation on physical
+watch firmware remains unverified. This is not intended to handle
+whole-day date-line changes.
+
+## Release to the Connect IQ Store
+
+One command builds the signed application package for every device listed in
+`manifest.xml` (currently `venu445mm` and `fr970`) into a single file:
+
+```sh
+./release.sh
+```
+
+This produces `bin/clou-<tag>.iq` (e.g. `bin/clou-v0.0.1.iq`), named
+after the most recent git tag reachable from `HEAD`
+(`git describe --tags --abbrev=0`), ready to upload in the
+[Connect IQ Developer Portal](https://developer.garmin.com/connect-iq/developer-tools/).
+It's a release build (`-r`, debug info stripped) with strict type checking
+(`-l 3`); test code is excluded, same as a normal build.
+
+Tag a commit (`git tag -a vX.Y.Z -m "..."`) before running `./release.sh` to
+version a release.
+
 ## Install on the watch
 
 The Venu 4 connects over USB as an MTP device, not as a drive, so macOS
@@ -101,7 +127,7 @@ files across.
 
    ```sh
    mkdir -p bin
-   monkeyc -o bin/boussole.prg -f monkey.jungle -y developer_key.der -d venu445mm -r -w -l 3
+   monkeyc -o bin/clou.prg -f monkey.jungle -y developer_key.der -d venu445mm -r -w -l 3
    ```
 
    Use `-d fr970` instead when building for the Forerunner 970.
@@ -111,12 +137,12 @@ files across.
 3. In OpenMTP, the left pane is your Mac and the right pane is the watch. In
    the left pane go to this project's `bin/` folder; in the right pane go to
    `GARMIN/Apps`.
-4. Drag `boussole.prg` from the left pane into `GARMIN/Apps`, straight into
+4. Drag `clou.prg` from the left pane into `GARMIN/Apps`, straight into
    that folder, not a subfolder. Replace the old copy if it asks. Leave the
    other `.prg` files there alone: they're your other installed apps.
 5. Unplug the watch. It installs the file as it disconnects.
 6. On the watch, long-press the watch face (or go to **Settings → Watch Face**)
-   and pick **Boussole**.
+   and pick **Clou**.
 
 To update, rebuild and repeat steps 2–5: the new file replaces the old one.
 
@@ -203,8 +229,8 @@ manifest.xml                     # app id, type=watchface, target products
 monkey.jungle                    # build config
 resources/strings/strings.xml    # app name
 resources/drawables/             # launcher icon + drawable defs
-source/BoussoleApp.mc            # Application entry point
-source/BoussoleView.mc           # reads the device, builds the scene, renders it
+source/ClouApp.mc            # Application entry point
+source/ClouView.mc           # reads the device, builds the scene, renders it
 source/Layout.mc                 # track radii and polar maths, from screen size
 source/Shapes.mc                 # plain drawing records (Arc, Line, Dot)
 source/Palette.mc                # named colours (craie, encre, brume)
@@ -219,7 +245,7 @@ source/Render.mc                 # the only code that draws
 
 ## Always-On Display
 
-While asleep on AMOLED devices with Always-On enabled, `BoussoleView` swaps
+While asleep on AMOLED devices with Always-On enabled, `ClouView` swaps
 in the pared-back scene from `TimeRing.aodScene` (see its doc comment for
 what changes and why).
 

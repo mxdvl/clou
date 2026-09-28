@@ -19,7 +19,7 @@ import Toybox.WatchUi;
 //! While asleep on a device that requires AMOLED burn-in protection,
 //! `onUpdate` builds the scene from `TimeRing.aodScene` instead of
 //! `fullScene` - see there for what that drops.
-class BoussoleView extends WatchUi.WatchFace {
+class ClouView extends WatchUi.WatchFace {
 
     private const DEFAULT_STEP_GOAL = 10000;
 
