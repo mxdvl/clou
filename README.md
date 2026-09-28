@@ -98,6 +98,25 @@ verified in SDK 9.2.0's simulator; its date interpretation on physical
 watch firmware remains unverified. This is not intended to handle
 whole-day date-line changes.
 
+## Release to the Connect IQ Store
+
+One command builds the signed application package for every device listed in
+`manifest.xml` (currently `venu445mm` and `fr970`) into a single file:
+
+```sh
+./release.sh
+```
+
+This produces `bin/clou-<tag>.iq` (e.g. `bin/clou-v0.0.1.iq`), named
+after the most recent git tag reachable from `HEAD`
+(`git describe --tags --abbrev=0`), ready to upload in the
+[Connect IQ Developer Portal](https://developer.garmin.com/connect-iq/developer-tools/).
+It's a release build (`-r`, debug info stripped) with strict type checking
+(`-l 3`); test code is excluded, same as a normal build.
+
+Tag a commit (`git tag -a vX.Y.Z -m "..."`) before running `./release.sh` to
+version a release.
+
 ## Install on the watch
 
 The Venu 4 connects over USB as an MTP device, not as a drive, so macOS
