@@ -10,13 +10,14 @@
 #
 # Usage:
 #   ./release.sh
+#   VERSION=abc1234 ./release.sh   # name it something else (CI, untagged builds)
 #
 # Requires on PATH: monkeyc (Connect IQ SDK bin/) + JDK.
 set -eu
 
 cd "$(dirname "$0")"
 
-VERSION="$(git describe --tags --abbrev=0)"
+VERSION="${VERSION:-$(git describe --tags --abbrev=0)}"
 OUT="bin/clou-$VERSION.iq"
 mkdir -p bin
 

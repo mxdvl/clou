@@ -3,7 +3,7 @@ name: Build
 # Builds the store package (.iq) for every device in manifest.xml.
 #
 # - On a pushed version tag (v*): creates a *draft* GitHub release for the tag
-#   with boussole-<tag>.iq attached. Publishing the draft is left to you; with
+#   with clou-<tag>.iq attached. Publishing the draft is left to you; with
 #   immutable releases turned on, that freezes the release, its asset and its
 #   tag. (Assets can't be added to a published immutable release, which is why
 #   the build starts from the tag rather than from publishing a release.)
@@ -90,26 +90,22 @@ jobs:
             echo "version=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
           fi
 
-      # One monkeyc run packages every device: it compiles them in a single
-      # JVM, which is much quicker than one process per device.
+      # release.sh packages every device in one monkeyc run (a single JVM,
+      # much quicker than one process per device). It reads the key from
+      # developer_key.der, which is git-ignored and removed straight after.
       - name: Build the .iq
         env:
           CIQ_DEVELOPER_KEY: ${{ secrets.CIQ_DEVELOPER_KEY }}
+          VERSION: ${{ steps.name.outputs.version }}
         run: |
-          key="$RUNNER_TEMP/developer_key.der"
-          printf '%s' "$CIQ_DEVELOPER_KEY" | base64 -d > "$key"
-          mkdir -p bin
-          # Same flags as release.sh: release build, strict type checking.
-          monkeyc -e -r -w -l 3 \
-            -f monkey.jungle \
-            -y "$key" \
-            -o "bin/boussole-${{ steps.name.outputs.version }}.iq"
-          rm "$key"
+          trap 'rm -f developer_key.der' EXIT
+          printf '%s' "$CIQ_DEVELOPER_KEY" | base64 -d > developer_key.der
+          ./release.sh
 
       - uses: actions/upload-artifact@v4
         with:
-          name: boussole-${{ steps.name.outputs.version }}
-          path: bin/boussole-${{ steps.name.outputs.version }}.iq
+          name: clou-${{ steps.name.outputs.version }}
+          path: bin/clou-${{ steps.name.outputs.version }}.iq
 
       # A new tag gets a new draft release with the .iq attached. An existing
       # draft (say, one you started by hand) gets the .iq added or replaced. A
@@ -119,7 +115,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
-          IQ: bin/boussole-${{ steps.name.outputs.version }}.iq
+          IQ: bin/clou-${{ steps.name.outputs.version }}.iq
         run: |
           if ! gh release view "$TAG" --json isDraft > release.json 2>/dev/null; then
             gh release create "$TAG" "$IQ" --draft --verify-tag --title "$TAG" --generate-notes

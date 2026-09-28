@@ -117,41 +117,11 @@ It's a release build (`-r`, debug info stripped) with strict type checking
 Tag a commit (`git tag -a vX.Y.Z -m "..."`) before running `./release.sh` to
 version a release.
 
-## Install on the watch
-
-The Venu 4 connects over USB as an MTP device, not as a drive, so macOS
-Finder can't see it. Use [OpenMTP](https://openmtp.ganeshrvel.com/) to copy
-files across.
-
-1. Build a release `.prg` for the watch:
-
-   ```sh
-   mkdir -p bin
-   monkeyc -o bin/clou.prg -f monkey.jungle -y developer_key.der -d venu445mm -r -w -l 3
-   ```
-
-   Use `-d fr970` instead when building for the Forerunner 970.
-
-2. Plug the watch in with its USB cable and open **OpenMTP.app**. Quit Garmin
-   Express first if it's running, since it can hold the connection.
-3. In OpenMTP, the left pane is your Mac and the right pane is the watch. In
-   the left pane go to this project's `bin/` folder; in the right pane go to
-   `GARMIN/Apps`.
-4. Drag `clou.prg` from the left pane into `GARMIN/Apps`, straight into
-   that folder, not a subfolder. Replace the old copy if it asks. Leave the
-   other `.prg` files there alone: they're your other installed apps.
-5. Unplug the watch. It installs the file as it disconnects.
-6. On the watch, long-press the watch face (or go to **Settings → Watch Face**)
-   and pick **Clou**.
-
-To update, rebuild and repeat steps 2–5: the new file replaces the old one.
-
 ## Releasing from CI
 
-[`.github/workflows/build.yml`](.github/workflows/build.yml) builds the store
-package (`.iq`, one build per device in `manifest.xml`) on GitHub, so a
-release's package always comes from its tag rather than from a local
-checkout.
+[`.github/workflows/build.yml`](.github/workflows/build.yml) runs `release.sh`
+on GitHub to build the store package, so a release's `.iq` always comes from
+its tag rather than from a local checkout.
 
 To release, tag the commit and push the tag:
 
@@ -160,7 +130,7 @@ git tag v0.0.2
 git push origin v0.0.2
 ```
 
-The workflow builds `boussole-v0.0.2.iq` and creates a **draft** release for
+The workflow builds `clou-v0.0.2.iq` and creates a **draft** release for
 the tag with the file attached and generated notes. Check the draft, edit the
 notes, then publish it. Download the `.iq` from the release and upload it in
 the Connect IQ developer dashboard (Garmin has no API for publishing, and
@@ -193,6 +163,35 @@ the licence agreement instead of accepting it silently.
 
 Sign every release with the same developer key: the store rejects updates
 signed with a different one.
+
+## Install on the watch
+
+The Venu 4 connects over USB as an MTP device, not as a drive, so macOS
+Finder can't see it. Use [OpenMTP](https://openmtp.ganeshrvel.com/) to copy
+files across.
+
+1. Build a release `.prg` for the watch:
+
+   ```sh
+   mkdir -p bin
+   monkeyc -o bin/clou.prg -f monkey.jungle -y developer_key.der -d venu445mm -r -w -l 3
+   ```
+
+   Use `-d fr970` instead when building for the Forerunner 970.
+
+2. Plug the watch in with its USB cable and open **OpenMTP.app**. Quit Garmin
+   Express first if it's running, since it can hold the connection.
+3. In OpenMTP, the left pane is your Mac and the right pane is the watch. In
+   the left pane go to this project's `bin/` folder; in the right pane go to
+   `GARMIN/Apps`.
+4. Drag `clou.prg` from the left pane into `GARMIN/Apps`, straight into
+   that folder, not a subfolder. Replace the old copy if it asks. Leave the
+   other `.prg` files there alone: they're your other installed apps.
+5. Unplug the watch. It installs the file as it disconnects.
+6. On the watch, long-press the watch face (or go to **Settings → Watch Face**)
+   and pick **Clou**.
+
+To update, rebuild and repeat steps 2–5: the new file replaces the old one.
 
 ## Editor support
 
