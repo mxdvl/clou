@@ -117,6 +117,53 @@ It's a release build (`-r`, debug info stripped) with strict type checking
 Tag a commit (`git tag -a vX.Y.Z -m "..."`) before running `./release.sh` to
 version a release.
 
+## Releasing from CI
+
+[`.github/workflows/build.yml`](.github/workflows/build.yml) runs `release.sh`
+on GitHub to build the store package, so a release's `.iq` always comes from
+its tag rather than from a local checkout.
+
+To release, tag the commit and push the tag:
+
+```sh
+git tag v0.0.2
+git push origin v0.0.2
+```
+
+The workflow builds `clou-v0.0.2.iq` and creates a **draft** release for
+the tag with the file attached and generated notes. Check the draft, edit the
+notes, then publish it. Download the `.iq` from the release and upload it in
+the Connect IQ developer dashboard (Garmin has no API for publishing, and
+every version goes through their review anyway).
+
+With **immutable releases** turned on (Settings → General → Releases), the
+published release, its `.iq` and its tag can no longer change, so the file on
+the release is exactly what was built from that tag. That's why the build
+starts from the tag rather than from publishing a release: an immutable
+release can't take new assets once published. To stop `v*` tags being moved
+or deleted before they're released too, add a tag ruleset (Settings → Rules →
+Rulesets) that blocks updates and deletions for `refs/tags/v*`.
+
+On every push to `main`, the workflow runs the same build and keeps the `.iq`
+as a workflow artifact. That checks each merge still compiles for every
+device, and keeps the SDK and device downloads cached for the next release.
+
+One-time setup, in the repository's **Settings → Secrets and variables →
+Actions**:
+
+| Secret | Value |
+| --- | --- |
+| `GARMIN_USERNAME` | Garmin account email (used to download the SDK and devices) |
+| `GARMIN_PASSWORD` | its password; the SDK manager can't answer two-factor prompts |
+| `CIQ_DEVELOPER_KEY` | `developer_key.der`, base64-encoded: `base64 -i developer_key.der \| pbcopy` |
+
+Optionally, set the **variable** `CIQ_AGREEMENT_HASH` to the hash printed by
+`connect-iq-sdk-manager agreement view`: the build then fails if Garmin changes
+the licence agreement instead of accepting it silently.
+
+Sign every release with the same developer key: the store rejects updates
+signed with a different one.
+
 ## Install on the watch
 
 The Venu 4 connects over USB as an MTP device, not as a drive, so macOS

@@ -1,0 +1,127 @@
+name: Build
+
+# Builds the store package (.iq) for every device in manifest.xml.
+#
+# - On a pushed version tag (v*): creates a *draft* GitHub release for the tag
+#   with clou-<tag>.iq attached. Publishing the draft is left to you; with
+#   immutable releases turned on, that freezes the release, its asset and its
+#   tag. (Assets can't be added to a published immutable release, which is why
+#   the build starts from the tag rather than from publishing a release.)
+# - On pushes to main: the same build, kept as a workflow artifact. This checks
+#   every merge still compiles and keeps the SDK/device cache warm: caches made
+#   on main are the only ones a tag run can reuse.
+#
+# Needs these repository secrets (see README → Releasing from CI):
+#   GARMIN_USERNAME, GARMIN_PASSWORD  Garmin account for the SDK manager
+#   CIQ_DEVELOPER_KEY                 developer_key.der, base64-encoded
+# and optionally the repository variable CIQ_AGREEMENT_HASH, to fail rather
+# than silently accept a changed Connect IQ licence agreement.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write # create the draft release
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type == 'branch' }}
+
+env:
+  SDK_VERSION: "9.2.0"
+  SDK_MANAGER_VERSION: v0.8.4 # github.com/lindell/connect-iq-sdk-manager-cli
+  GARMIN_ROOT: ~/.Garmin/ConnectIQ
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # The SDK and device files are the slow part (a download per device), so
+      # keep them between runs. Only Sdks/ and Devices/ are cached: the same
+      # folder holds the Garmin login token, which must not end up in a cache.
+      # A new device in the manifest misses the exact key, restores the last
+      # cache and downloads just what's missing.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.GARMIN_ROOT }}/Sdks
+            ${{ env.GARMIN_ROOT }}/Devices
+          key: connectiq-${{ env.SDK_VERSION }}-${{ hashFiles('manifest.xml') }}
+          restore-keys: connectiq-${{ env.SDK_VERSION }}-
+
+      - name: Install the SDK manager
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL https://raw.githubusercontent.com/lindell/connect-iq-sdk-manager-cli/master/install.sh \
+            | sh -s -- -b "$HOME/.local/bin" "$SDK_MANAGER_VERSION"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Fetch the SDK and devices
+        env:
+          GARMIN_USERNAME: ${{ secrets.GARMIN_USERNAME }}
+          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
+        run: |
+          connect-iq-sdk-manager agreement accept --agreement-hash "${{ vars.CIQ_AGREEMENT_HASH }}"
+          connect-iq-sdk-manager login
+          connect-iq-sdk-manager sdk set "$SDK_VERSION"
+          connect-iq-sdk-manager device download --manifest manifest.xml
+          # Logs share stdout with the path, so keep only its last line.
+          sdk_bin="$(connect-iq-sdk-manager sdk current-path --bin --log-level error | tail -n 1)"
+          test -x "$sdk_bin/monkeyc" || { echo "no monkeyc in '$sdk_bin'"; exit 1; }
+          echo "$sdk_bin" >> "$GITHUB_PATH"
+
+      - name: Name the build
+        id: name
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            echo "version=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # release.sh packages every device in one monkeyc run (a single JVM,
+      # much quicker than one process per device). It reads the key from
+      # developer_key.der, which is git-ignored and removed straight after.
+      - name: Build the .iq
+        env:
+          CIQ_DEVELOPER_KEY: ${{ secrets.CIQ_DEVELOPER_KEY }}
+          VERSION: ${{ steps.name.outputs.version }}
+        run: |
+          trap 'rm -f developer_key.der' EXIT
+          printf '%s' "$CIQ_DEVELOPER_KEY" | base64 -d > developer_key.der
+          ./release.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clou-${{ steps.name.outputs.version }}
+          path: bin/clou-${{ steps.name.outputs.version }}.iq
+
+      # A new tag gets a new draft release with the .iq attached. An existing
+      # draft (say, one you started by hand) gets the .iq added or replaced. A
+      # published release is left alone: if it's immutable it can't change.
+      - name: Draft the release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          IQ: bin/clou-${{ steps.name.outputs.version }}.iq
+        run: |
+          if ! gh release view "$TAG" --json isDraft > release.json 2>/dev/null; then
+            gh release create "$TAG" "$IQ" --draft --verify-tag --title "$TAG" --generate-notes
+          elif [ "$(jq -r .isDraft release.json)" = true ]; then
+            gh release upload "$TAG" "$IQ" --clobber
+          else
+            echo "::error::Release $TAG is already published; attach the .iq from this run's artifact, or cut a new tag."
+            exit 1
+          fi
