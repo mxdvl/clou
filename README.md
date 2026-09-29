@@ -13,11 +13,33 @@ nail through the dial. Formerly _boussole_ ("compass").
 
 ## Target devices
 
-- `venu445mm` — Venu 4, 45 mm, 454 × 454 round AMOLED
-- `fr970` — Forerunner 970, 454 × 454 round AMOLED
+`manifest.xml` is the source of truth for which devices this builds for: every
+product listed there has a **round 454 × 454 display**, matching the Venu 4
+**45 mm** (not the 390 × 390 Venu 4 41 mm). Garmin groups several watch models
+under one SDK product ID, so the manifest's list is shorter than the number of
+models it actually covers — see each device's page in the
+[Connect IQ compatible-devices list](https://developer.garmin.com/connect-iq/compatible-devices/)
+for which models share an ID.
 
-Install the device image for your target from the **Connect IQ SDK Manager → Devices** tab
-before building/simulating.
+Install each target's device image via **Connect IQ SDK Manager → Devices**
+before building, simulating, or exporting a release — a device missing
+locally fails with "not recognized" at compile time.
+
+Garmin adds new round 454 × 454 devices from time to time (the fēnix 9 family
+was the most recent), so the manifest can go stale. To check it against
+what's actually installed:
+
+```sh
+for d in "$HOME/Library/Application Support/Garmin/ConnectIQ/Devices"/*/simulator.json; do
+  jq -r --arg id "$(basename "$(dirname "$d")")" \
+    '.display | [$id, .location.width, .location.height, .shape] | @tsv' "$d"
+done | awk -F'\t' '$2==454 && $3==454 && $4=="round"'
+```
+
+Compare the output against `manifest.xml`'s `<iq:product>` entries. Nearby but
+distinct sizes (e.g. fēnix 9 Pro 51 mm at 466 × 466) are deliberately excluded
+until they get their own layout work, tracked in
+[issue #10](https://github.com/mxdvl/clou/issues/10).
 
 ## Prerequisites
 
@@ -29,7 +51,7 @@ fish_add_path /opt/homebrew/opt/openjdk/bin
 fish_add_path "$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/connectiq-sdk-mac-9.2.0-2026-06-09-92a1605b2/bin"
 ```
 
-- The `venu445mm` or `fr970` device image, installed via **SDK Manager → Devices**.
+- Your target's device image, installed via **SDK Manager → Devices** (see [Target devices](#target-devices)).
 - `developer_key.der` in the project root (already generated; git-ignored).
 
 ## Build & run
@@ -41,7 +63,7 @@ One command builds and side-loads into the simulator:
 ./run.sh fr970    # Forerunner 970
 ```
 
-Both devices use the same layout and Always-On Display handling. To rebuild
+All targets use the same layout and capability-based Always-On Display handling. To rebuild
 and reload automatically when editing, run `./watch.sh fr970` (or `./watch.sh`
 for the Venu 4).
 
@@ -54,7 +76,7 @@ connectiq                       # launch the simulator (once)
 monkeydo bin/clou.prg venu445mm
 ```
 
-For the Forerunner 970, replace `venu445mm` with `fr970` in both commands.
+For another target, replace `venu445mm` with its SDK product ID in both commands.
 Each build replaces `bin/clou.prg` with the version for the selected device.
 
 In the simulator, pick a watch face via **Settings** if it doesn't show
@@ -101,7 +123,7 @@ whole-day date-line changes.
 ## Release to the Connect IQ Store
 
 One command builds the signed application package for every device listed in
-`manifest.xml` (currently `venu445mm` and `fr970`) into a single file:
+`manifest.xml` into a single file:
 
 ```sh
 ./release.sh
@@ -113,6 +135,18 @@ after the most recent git tag reachable from `HEAD`
 [Connect IQ Developer Portal](https://developer.garmin.com/connect-iq/developer-tools/).
 It's a release build (`-r`, debug info stripped) with strict type checking
 (`-l 3`); test code is excluded, same as a normal build.
+
+To check compilation for every manifest target without requiring a git tag,
+run the same SDK export directly:
+
+```sh
+mkdir -p bin
+monkeyc -e -r -o bin/clou.iq -f monkey.jungle -y developer_key.der -w -l 3
+```
+
+Unlike a single-device `-d` build, this export compiles every declared product
+and its SDK variants. A successful export does not replace simulator checks
+of rendering, sleep/wake behavior and Always-On burn-in limits on each model.
 
 Tag a commit (`git tag -a vX.Y.Z -m "..."`) before running `./release.sh` to
 version a release.

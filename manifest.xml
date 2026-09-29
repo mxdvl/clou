@@ -14,13 +14,25 @@
         type="watchface">
 
         <!--
-            Devices this watch face is built for. Add or remove product ids to
-            match the hardware you want to target. Every id here must be a
-            device supported by your installed SDK (see the device reference in
-            the Connect IQ SDK Manager).
+            Round 454 x 454 watch-face targets, matching Venu 4 (45 mm).
+            Some product ids cover several watch models and case sizes.
+            Install all these device packages in the Connect IQ SDK Manager
+            before exporting a release.
         -->
         <iq:products>
+            <iq:product id="venu3"/>
             <iq:product id="venu445mm"/>
+            <iq:product id="approachs7047mm"/>
+            <iq:product id="d2mach2"/>
+            <iq:product id="d2mach2pro"/>
+            <iq:product id="descentmk351mm"/>
+            <iq:product id="epix2pro51mm"/>
+            <iq:product id="fenix847mm"/>
+            <iq:product id="fenix8pro47mm"/>
+            <iq:product id="fenix947mm"/>
+            <iq:product id="fenix9pro47mm"/>
+            <iq:product id="fr57047mm"/>
+            <iq:product id="fr965"/>
             <iq:product id="fr970"/>
         </iq:products>
 
