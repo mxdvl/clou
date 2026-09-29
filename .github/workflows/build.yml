@@ -72,6 +72,13 @@ jobs:
           GARMIN_USERNAME: ${{ secrets.GARMIN_USERNAME }}
           GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
         run: |
+          # Without both, `login` silently falls back to an interactive OAuth
+          # flow that can never complete in CI, hanging until the job times
+          # out. Fail immediately instead. (README → Releasing from CI)
+          if [ -z "$GARMIN_USERNAME" ] || [ -z "$GARMIN_PASSWORD" ]; then
+            echo "::error::GARMIN_USERNAME and/or GARMIN_PASSWORD repository secrets are not set. See README → Releasing from CI for one-time setup."
+            exit 1
+          fi
           connect-iq-sdk-manager agreement accept --agreement-hash "${{ vars.CIQ_AGREEMENT_HASH }}"
           connect-iq-sdk-manager login
           connect-iq-sdk-manager sdk set "$SDK_VERSION"
@@ -98,6 +105,10 @@ jobs:
           CIQ_DEVELOPER_KEY: ${{ secrets.CIQ_DEVELOPER_KEY }}
           VERSION: ${{ steps.name.outputs.version }}
         run: |
+          if [ -z "$CIQ_DEVELOPER_KEY" ]; then
+            echo "::error::CIQ_DEVELOPER_KEY repository secret is not set. See README → Releasing from CI for one-time setup."
+            exit 1
+          fi
           trap 'rm -f developer_key.der' EXIT
           printf '%s' "$CIQ_DEVELOPER_KEY" | base64 -d > developer_key.der
           ./release.sh
