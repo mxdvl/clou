@@ -265,12 +265,13 @@ resources/drawables/             # launcher icon + drawable defs
 source/ClouApp.mc            # Application entry point
 source/ClouView.mc           # reads the device, builds the scene, renders it
 source/Layout.mc                 # track radii and polar maths, from screen size
-source/Shapes.mc                 # plain drawing records (Arc, Line, Dot)
+source/Shapes.mc                 # plain drawing records (Arc, Line, Dot, Text)
 source/Palette.mc                # named colours (craie, encre, brume)
 source/ClockArc.mc               # pure: one time as an arc between the hands + hour bar
 source/TimeRing.mc               # pure: current time, hour points, numerals; the Always-On scene
 source/SunRing.mc                # pure: next sunrise or sunset as a clock arc
 source/StepsRing.mc              # pure: steps ring, anchored at XII
+source/DateStack.mc              # pure: today's date in the middle (SAT / 7 / NOV)
 source/Numerals.mc               # pure: roman numerals as strokes
 source/SunCalc.mc                # next sun event, via Toybox.Weather (API 3.3.0+)
 source/Render.mc                 # the only code that draws

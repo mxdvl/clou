@@ -26,6 +26,13 @@ module Render {
                 var dot = shape as Shapes.Dot;
                 dc.setColor(dot.color, Graphics.COLOR_TRANSPARENT);
                 dc.fillCircle(dot.centreX, dot.centreY, dot.radius);
+            } else if (shape instanceof Shapes.Text) {
+                var text = shape as Shapes.Text;
+                dc.setColor(text.color, Graphics.COLOR_TRANSPARENT);
+                dc.drawText(
+                    text.centreX, text.centreY, text.font, text.text,
+                    Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+                );
             }
         }
     }

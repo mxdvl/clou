@@ -4,6 +4,7 @@ import Toybox.Lang;
 import Toybox.Position;
 import Toybox.System;
 import Toybox.Time;
+import Toybox.Time.Gregorian;
 import Toybox.WatchUi;
 
 //! Watch face made of concentric rings. Each update is three steps:
@@ -14,11 +15,13 @@ import Toybox.WatchUi;
 //!                   hour points and numerals
 //!        SunRing    the next sunrise or sunset as a `ClockArc`
 //!        StepsRing  progress towards the step goal, bar anchored at XII
+//!        DateStack  today's date in the middle (SAT / 7 / NOV)
 //!   3. `Render` draws the scene
 //!
 //! While asleep on a device that requires AMOLED burn-in protection,
 //! `onUpdate` builds the scene from `TimeRing.aodScene` instead of
-//! `fullScene` - see there for what that drops.
+//! `fullScene` - see there for what that drops. The date only shows in the
+//! full scene.
 class ClouView extends WatchUi.WatchFace {
 
     private const DEFAULT_STEP_GOAL = 10000;
@@ -45,20 +48,26 @@ class ClouView extends WatchUi.WatchFace {
         var layout = new Layout(dc.getWidth(), dc.getHeight());
         var scene = lowPower
             ? TimeRing.aodScene(layout, minuteOfDay)
-            : fullScene(layout, minuteOfDay);
+            : fullScene(dc, layout, minuteOfDay);
 
         Render.draw(dc, scene);
     }
 
-    //! The normal scene: steps, the next sun event, and the current time.
+    //! The normal scene: steps, the next sun event, the current time and
+    //! today's date.
     private function fullScene(
-        layout as Layout, minuteOfDay as Number
+        dc as Graphics.Dc, layout as Layout, minuteOfDay as Number
     ) as Array<Shapes.Shape> {
         var activity = ActivityMonitor.getInfo();
         var location = Position.getInfo().position;
         var scene = StepsRing.scene(layout, orZero(activity.steps), stepGoal(activity.stepGoal));
         scene.addAll(SunRing.scene(layout, nextSunEvent(location)));
         scene.addAll(TimeRing.scene(layout, minuteOfDay));
+        var today = Gregorian.info(Time.now(), Time.FORMAT_MEDIUM);
+        scene.addAll(DateStack.scene(
+            layout, today.day_of_week as String, today.day as Number, today.month as String,
+            dc.getFontHeight(DateStack.LABEL_FONT), dc.getFontHeight(DateStack.NUMBER_FONT)
+        ));
         return scene;
     }
 

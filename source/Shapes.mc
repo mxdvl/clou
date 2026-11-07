@@ -7,7 +7,7 @@ import Toybox.Lang;
 //! black shape later in the list cuts a gap in whatever came before it.
 module Shapes {
 
-    typedef Shape as Arc or Line or Dot;
+    typedef Shape as Arc or Line or Dot or Text;
 
     //! Arc on the circle of `radius` about (`centreX`, `centreY`), from `start`
     //! clockwise for `sweep`. Both are fractions of a turn from 12 o'clock;
@@ -69,6 +69,26 @@ module Shapes {
             self.centreX = centreX;
             self.centreY = centreY;
             self.radius = radius;
+            self.color = color;
+        }
+    }
+
+    //! A line of text centred on (`centreX`, `centreY`), both ways.
+    class Text {
+        public var centreX as Float;
+        public var centreY as Float;
+        public var text as String;
+        public var font as Graphics.FontType;
+        public var color as Graphics.ColorType;
+
+        function initialize(
+            centreX as Float, centreY as Float, text as String,
+            font as Graphics.FontType, color as Graphics.ColorType
+        ) {
+            self.centreX = centreX;
+            self.centreY = centreY;
+            self.text = text;
+            self.font = font;
             self.color = color;
         }
     }
